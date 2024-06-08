@@ -2,7 +2,7 @@ package com.example.petrankapopovaemployees.controller;
 
 import com.example.petrankapopovaemployees.entity.EmployeePair;
 import com.example.petrankapopovaemployees.entity.EmployeeProject;
-import com.example.petrankapopovaemployees.entity.UploadResponse;
+import com.example.petrankapopovaemployees.entity.EmployeeWorkResponse;
 import com.example.petrankapopovaemployees.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +34,7 @@ public class EmployeeController {
         }
 
         try {
-            UploadResponse response = new UploadResponse();
+            EmployeeWorkResponse response = new EmployeeWorkResponse();
             List<EmployeeProject> employeeProjects = employeeService.loadEmployeeProjects(file);
             response.setEmployeeProjects(employeeProjects);
             List<EmployeePair> longestWorkingPair = employeeService.processFile(file);

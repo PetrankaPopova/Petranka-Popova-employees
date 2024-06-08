@@ -6,11 +6,11 @@ import lombok.Data;
 import java.util.List;
 @Data
 @AllArgsConstructor
-public class UploadResponse {
+public class EmployeeWorkResponse {
     private List<EmployeeProject> employeeProjects;
     private List<EmployeePair> longestWorkingPair;
 
-    public UploadResponse() {
+    public EmployeeWorkResponse() {
 
     }
 }
