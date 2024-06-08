@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Pair Finder</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="mb-4">Employee Pair Finder</h1>
+    <div class="mb-3">
+        <label for="fileInput" class="form-label">Select CSV file:</label>
+        <input type="file" class="form-control" id="fileInput">
+    </div>
+    <button class="btn btn-primary" onclick="uploadFile()">Upload File</button>
+    <hr>
+    <h2 class="mt-4">Common Projects:</h2>
+    <div id="result" class="mt-3"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    function csvToJson(csv) {
+        const lines = csv.split("\n");
+        const result = [];
+        const headers = lines[0].split(",");
+
+        for (let i = 1; i < lines.length; i++) {
+            const obj = {};
+            const currentline = lines[i].split(",");
+
+            for (let j = 0; j < headers.length; j++) {
+                if (currentline[j] !== undefined) {
+                    obj[headers[j].trim()] = currentline[j].trim();
+                }
+            }
+            if (Object.keys(obj).length > 0) {
+                result.push(obj);
+            }
+        }
+        return result;
+    }
+
+    function calculateDaysTogether(dateFrom1, dateTo1, dateFrom2, dateTo2) {
+        const startDate1 = new Date(dateFrom1);
+        const endDate1 = dateTo1 === 'null' ? new Date() : new Date(dateTo1);
+        const startDate2 = new Date(dateFrom2);
+        const endDate2 = dateTo2 === 'null' ? new Date() : new Date(dateTo2);
+
+        const start = startDate1 > startDate2 ? startDate1 : startDate2;
+        const end = endDate1 < endDate2 ? endDate1 : endDate2;
+
+        const diffTime = end - start;
+        const diffDays = Math.max(0, diffTime / (1000 * 60 * 60 * 24));
+
+        return diffDays;
+    }
+
+    function extractEmployeePairValues(employeeData) {
+        const extractedValues = [];
+        const projectGroups = {};
+
+
+        for (const record of employeeData) {
+            const { EmpID, ProjectID, DateFrom, DateTo } = record;
+            if (!projectGroups[ProjectID]) {
+                projectGroups[ProjectID] = [];
+            }
+            projectGroups[ProjectID].push({ EmpID, DateFrom, DateTo });
+        }
+
+        for (const projectId in projectGroups) {
+            const employees = projectGroups[projectId];
+            for (let i = 0; i < employees.length; i++) {
+                for (let j = i + 1; j < employees.length; j++) {
+                    const emp1 = employees[i];
+                    const emp2 = employees[j];
+                    const daysWorkedTogether = calculateDaysTogether(emp1.DateFrom, emp1.DateTo, emp2.DateFrom, emp2.DateTo);
+
+                    if (daysWorkedTogether > 0) {
+                        extractedValues.push({
+                            employeeId1: emp1.EmpID,
+                            employeeId2: emp2.EmpID,
+                            projectId: projectId,
+                            daysWorkedTogether: daysWorkedTogether
+                        });
+                    }
+                }
+            }
+        }
+
+        return extractedValues;
+    }
+
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+
+        if (file) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const csv = e.target.result;
+                const jsonData = csvToJson(csv);
+                console.log('Received data:', jsonData);
+
+                const extractedValues = extractEmployeePairValues(jsonData);
+                console.log('Extracted values:', extractedValues);
+
+                displayExtractedValues(extractedValues);
+            };
+
+            reader.readAsText(file);
+        } else {
+            displayError('No file selected.');
+        }
+    }
+
+    function displayExtractedValues(extractedValues) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '';
+
+        if (extractedValues.length === 0) {
+            displayError('No common projects found.');
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.classList.add('table', 'table-bordered', 'table-striped');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+            <tr>
+                <th>Employee ID #1</th>
+                <th>Employee ID #2</th>
+                <th>Project ID</th>
+                <th>Days Worked</th>
+            </tr>
+        `;
+        const tbody = document.createElement('tbody');
+
+        extractedValues.forEach(pair => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${pair.employeeId1}</td>
+                <td>${pair.employeeId2}</td>
+                <td>${pair.projectId}</td>
+                <td>${pair.daysWorkedTogether}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(thead);
+        table.appendChild(tbody);
+        resultDiv.appendChild(table);
+    }
+
+    function displayError(message) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `<p>${message}</p>`;
+    }
+</script>
+</body>
+</html>
