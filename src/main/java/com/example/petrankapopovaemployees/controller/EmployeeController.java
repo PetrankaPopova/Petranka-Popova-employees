@@ -35,12 +35,8 @@ public class EmployeeController {
 
         try {
             UploadResponse response = new UploadResponse();
-
-            // Load employee projects
             List<EmployeeProject> employeeProjects = employeeService.loadEmployeeProjects(file);
             response.setEmployeeProjects(employeeProjects);
-
-            // Process file and find longest working pair
             List<EmployeePair> longestWorkingPair = employeeService.processFile(file);
             response.setLongestWorkingPair(longestWorkingPair);
 
