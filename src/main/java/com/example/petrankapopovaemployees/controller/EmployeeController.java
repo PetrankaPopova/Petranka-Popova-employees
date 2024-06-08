@@ -1,7 +1,10 @@
 package com.example.petrankapopovaemployees.controller;
 
 import com.example.petrankapopovaemployees.entity.EmployeePair;
+import com.example.petrankapopovaemployees.entity.EmployeeProject;
+import com.example.petrankapopovaemployees.entity.UploadResponse;
 import com.example.petrankapopovaemployees.service.EmployeeService;
+import com.opencsv.CSVReader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -11,6 +14,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -30,19 +38,25 @@ public class EmployeeController {
     @PostMapping("/upload")
     public ResponseEntity<?> processUploadedFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            ModelAndView mav = new ModelAndView("home");
-            mav.addObject("error", "File is required.");
-            return ResponseEntity.badRequest().body(mav);
+            return ResponseEntity.badRequest().body("File is required.");
         }
 
         try {
-            List<EmployeePair> employeePairs = employeeService.processFile(file);
-            if (employeePairs.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok(employeePairs);
+            UploadResponse response = new UploadResponse();
+
+            // Load employee projects
+            List<EmployeeProject> employeeProjects = employeeService.loadEmployeeProjects(file);
+            response.setEmployeeProjects(employeeProjects);
+
+            // Process file and find longest working pair
+            List<EmployeePair> longestWorkingPair = employeeService.processFile(file);
+            response.setLongestWorkingPair(longestWorkingPair);
+
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("An error occurred while processing the file.");
         }
     }
 }
+
+

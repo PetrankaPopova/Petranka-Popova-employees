@@ -32,7 +32,7 @@ public class EmployeeService {
         return findEmployeePairs(employeeProjects);
     }
 
-    private List<EmployeeProject> loadEmployeeProjects(MultipartFile file) throws IOException, CsvValidationException {
+    public List<EmployeeProject> loadEmployeeProjects(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
              CSVReader csvReader = new CSVReader(reader)) {
@@ -93,10 +93,15 @@ public class EmployeeService {
         return employeePairs;
     }
 
-    private long calculateOverlapDays(EmployeeProject ep1, EmployeeProject ep2) {
+    private static long calculateOverlapDays(EmployeeProject ep1, EmployeeProject ep2) {
         LocalDate start = ep1.getDateFrom().isAfter(ep2.getDateFrom()) ? ep1.getDateFrom() : ep2.getDateFrom();
         LocalDate end = ep1.getDateTo().isBefore(ep2.getDateTo()) ? ep1.getDateTo() : ep2.getDateTo();
-        return ChronoUnit.DAYS.between(start, end) + 1;
+
+        if (end.isBefore(start)) {
+            return 0;
+        }
+
+        return ChronoUnit.DAYS.between(start, end) + 1; // Add 1 to include the end day in the count
     }
 }
 

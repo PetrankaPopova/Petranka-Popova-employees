@@ -15,8 +15,20 @@
     </div>
     <button class="btn btn-primary" onclick="uploadFile()">Upload File</button>
     <hr>
-    <h2 class="mt-4">Common Projects:</h2>
-    <div id="result" class="mt-3"></div>
+    <h2 class="mt-4">Employee Projects:</h2>
+    <div class="table-responsive mt-3">
+        <table class="table table-bordered" id="employeeProjectsTable">
+            <thead>
+            <tr>
+                <th>Employee ID #1</th>
+                <th>Employee ID #2</th>
+                <th>Project ID</th>
+                <th>Days Worked</th>
+            </tr>
+            </thead>
+            <tbody id="employeeProjectsBody"></tbody>
+        </table>
+    </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
@@ -45,47 +57,55 @@
         }
     }
 
-    function displayExtractedValues(extractedValues) {
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '';
+    function displayExtractedValues(response) {
+        const employeeProjectsBody = document.getElementById('employeeProjectsBody');
+        employeeProjectsBody.innerHTML = '';
 
-        if (extractedValues.length === 0) {
-            displayError('No common projects found.');
+        if (!response || !response.employeeProjects || response.employeeProjects.length === 0) {
+            displayError('No employee projects found.');
             return;
         }
 
-        const table = document.createElement('table');
-        table.classList.add('table', 'table-bordered', 'table-striped');
-        const thead = document.createElement('thead');
-        thead.innerHTML = `
-            <tr>
-                <th>Employee ID #1</th>
-                <th>Employee ID #2</th>
-                <th>Project ID</th>
-                <th>Days Worked</th>
-            </tr>
-        `;
-        const tbody = document.createElement('tbody');
+        if (!response.longestWorkingPair || response.longestWorkingPair.length === 0) {
+            displayError('No longest working pairs found.');
+            return;
+        }
 
-        extractedValues.forEach(pair => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${pair.employeeId1}</td>
-                <td>${pair.employeeId2}</td>
-                <td>${pair.projectId}</td>
-                <td>${pair.daysWorkedTogether}</td>
+        const longestWorkingPairs = response.longestWorkingPair;
+
+        response.employeeProjects.forEach(project => {
+            // Find all pairs that have the same projectId as the current project
+            const matchingPairs = longestWorkingPairs.filter(pair =>
+                (pair.employeeId1 === project.empId || pair.employeeId2 === project.empId)
+            );
+
+            if (matchingPairs.length > 0) {
+                matchingPairs.forEach(pair => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                    <td>${pair.employeeId1}</td>
+                    <td>${pair.employeeId2}</td>
+                    <td>${project.projectId}</td>
+                    <td>${pair.daysWorkedTogether}</td>
+                `;
+                    employeeProjectsBody.appendChild(row);
+                });
+            } else {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                <td>${project.empId}</td>
+                <td>N/A</td>
+                <td>${project.projectId}</td>
+                <td>N/A</td>
             `;
-            tbody.appendChild(row);
+                employeeProjectsBody.appendChild(row);
+            }
         });
-
-        table.appendChild(thead);
-        table.appendChild(tbody);
-        resultDiv.appendChild(table);
     }
 
     function displayError(message) {
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = `<p class="text-danger">${message}</p>`;
+        const employeeProjectsBody = document.getElementById('employeeProjectsBody');
+        employeeProjectsBody.innerHTML = `<tr><td colspan="4" class="text-danger">${message}</td></tr>`;
     }
 </script>
 </body>
