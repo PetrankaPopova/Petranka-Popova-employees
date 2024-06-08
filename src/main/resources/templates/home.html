@@ -20,97 +20,26 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
-    function csvToJson(csv) {
-        const lines = csv.split("\n");
-        const result = [];
-        const headers = lines[0].split(",");
-
-        for (let i = 1; i < lines.length; i++) {
-            const obj = {};
-            const currentline = lines[i].split(",");
-
-            for (let j = 0; j < headers.length; j++) {
-                if (currentline[j] !== undefined) {
-                    obj[headers[j].trim()] = currentline[j].trim();
-                }
-            }
-            if (Object.keys(obj).length > 0) {
-                result.push(obj);
-            }
-        }
-        return result;
-    }
-
-    function calculateDaysTogether(dateFrom1, dateTo1, dateFrom2, dateTo2) {
-        const startDate1 = new Date(dateFrom1);
-        const endDate1 = dateTo1 === 'null' ? new Date() : new Date(dateTo1);
-        const startDate2 = new Date(dateFrom2);
-        const endDate2 = dateTo2 === 'null' ? new Date() : new Date(dateTo2);
-
-        const start = startDate1 > startDate2 ? startDate1 : startDate2;
-        const end = endDate1 < endDate2 ? endDate1 : endDate2;
-
-        const diffTime = end - start;
-        const diffDays = Math.max(0, diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays;
-    }
-
-    function extractEmployeePairValues(employeeData) {
-        const extractedValues = [];
-        const projectGroups = {};
-
-
-        for (const record of employeeData) {
-            const { EmpID, ProjectID, DateFrom, DateTo } = record;
-            if (!projectGroups[ProjectID]) {
-                projectGroups[ProjectID] = [];
-            }
-            projectGroups[ProjectID].push({ EmpID, DateFrom, DateTo });
-        }
-
-        for (const projectId in projectGroups) {
-            const employees = projectGroups[projectId];
-            for (let i = 0; i < employees.length; i++) {
-                for (let j = i + 1; j < employees.length; j++) {
-                    const emp1 = employees[i];
-                    const emp2 = employees[j];
-                    const daysWorkedTogether = calculateDaysTogether(emp1.DateFrom, emp1.DateTo, emp2.DateFrom, emp2.DateTo);
-
-                    if (daysWorkedTogether > 0) {
-                        extractedValues.push({
-                            employeeId1: emp1.EmpID,
-                            employeeId2: emp2.EmpID,
-                            projectId: projectId,
-                            daysWorkedTogether: daysWorkedTogether
-                        });
-                    }
-                }
-            }
-        }
-
-        return extractedValues;
-    }
-
     function uploadFile() {
         const fileInput = document.getElementById('fileInput');
         const file = fileInput.files[0];
 
         if (file) {
-            const reader = new FileReader();
+            const formData = new FormData();
+            formData.append('file', file);
 
-            reader.onload = function (e) {
-                const csv = e.target.result;
-                const jsonData = csvToJson(csv);
-                console.log('Received data:', jsonData);
-
-                const extractedValues = extractEmployeePairValues(jsonData);
-                console.log('Extracted values:', extractedValues);
-
-                displayExtractedValues(extractedValues);
-            };
-
-            reader.readAsText(file);
+            axios.post('/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+                .then(response => {
+                    displayExtractedValues(response.data);
+                })
+                .catch(error => {
+                    displayError('An error occurred while uploading the file.');
+                    console.error('Error:', error);
+                });
         } else {
             displayError('No file selected.');
         }
@@ -156,7 +85,7 @@
 
     function displayError(message) {
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = `<p>${message}</p>`;
+        resultDiv.innerHTML = `<p class="text-danger">${message}</p>`;
     }
 </script>
 </body>
