@@ -17,11 +17,21 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
+/**
+ * Service class to handle operations related to employee projects.
+ */
 @Service
 public class EmployeeService {
     private static final Logger logger = LoggerFactory.getLogger(EmployeeService.class);
 
+    /**
+     * Processes the uploaded file to find the longest working pair of employees.
+     *
+     * @param file The uploaded CSV file containing employee project data.
+     * @return The longest working pair of employees, or null if not found.
+     * @throws IOException           If an I/O error occurs while reading the file.
+     * @throws CsvValidationException If an error occurs during CSV validation.
+     */
     public EmployeePair processFile(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = loadEmployeeProjects(file);
         if (employeeProjects.isEmpty()) {
@@ -31,6 +41,14 @@ public class EmployeeService {
         return findEmployeePairs(employeeProjects);
     }
 
+    /**
+     * Loads employee project data from the uploaded CSV file.
+     *
+     * @param file The uploaded CSV file containing employee project data.
+     * @return A list of employee project objects.
+     * @throws IOException           If an I/O error occurs while reading the file.
+     * @throws CsvValidationException If an error occurs during CSV validation.
+     */
     public List<EmployeeProject> loadEmployeeProjects(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));

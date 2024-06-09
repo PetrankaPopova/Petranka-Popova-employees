@@ -30,6 +30,5 @@ public class EmployeePair {
     private long daysWorkedTogether;
     private int projectId;
 
-    public EmployeePair(long l, long l1, long maxDaysWorked) {
-    }
+
 }
