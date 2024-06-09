@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class EmployeeServiceTest {
     private final EmployeeService employeeService = new EmployeeService();
 
-
     @Test
     public void testLoadEmployeeProjects_withValidDataInput() throws IOException, CsvValidationException {
         String csvContent = "143,12,2013-01-11,2014-05-01\n" +
@@ -44,6 +43,7 @@ public class EmployeeServiceTest {
         assertEquals(LocalDate.of(2009, 1, 1), projects.get(2).getDateFrom());
         assertEquals(LocalDate.of(2012, 5, 27), projects.get(2).getDateTo());
     }
+
     @Test
     public void testLoadEmployeeProjects_withInvalidDate() throws IOException, CsvValidationException {
         String csvContent = "143,12,invalid,5/1/2014";
@@ -71,10 +71,8 @@ public class EmployeeServiceTest {
                 "143,10,2009-01-01,2012-05-27";
 
         MockMultipartFile file = new MockMultipartFile("file", "employees.csv", "text/csv", csvContent.getBytes(StandardCharsets.UTF_8));
-        List<EmployeePair> pairs = employeeService.processFile(file);
-        assertEquals(1, pairs.size());
+        EmployeePair pair = employeeService.processFile(file);
 
-        EmployeePair pair = pairs.get(0);
         assertEquals(143, pair.getEmployeeId1());
         assertEquals(143, pair.getEmployeeId2());
         assertEquals(12, pair.getDaysWorkedTogether());
@@ -108,9 +106,9 @@ public class EmployeeServiceTest {
                 "218,12,6/1/2013,5/1/2014";
         MockMultipartFile file = new MockMultipartFile("file", "employees.csv", "text/csv", csvContent.getBytes(StandardCharsets.UTF_8));
 
-        List<EmployeePair> pairs = employeeService.processFile(file);
+        EmployeePair pair = employeeService.processFile(file);
 
-        assertEquals(0, pairs.size());
+        assertEquals(null, pair);
     }
 
     @Test
@@ -144,11 +142,8 @@ public class EmployeeServiceTest {
                 "218,10,2009-01-01,2012-05-27";
         MockMultipartFile file = new MockMultipartFile("file", "employees.csv", "text/csv", csvContent.getBytes(StandardCharsets.UTF_8));
 
-        List<EmployeePair> pairs = employeeService.processFile(file);
+        EmployeePair pair = employeeService.processFile(file);
 
-        assertEquals(1, pairs.size());
-        assertTrue(pairs.stream().anyMatch(pair -> pair.getEmployeeId1() == 143 && pair.getEmployeeId2() == 218 && pair.getDaysWorkedTogether()>1L));
-
+        assertTrue(pair != null && pair.getEmployeeId1() == 143 && pair.getEmployeeId2() == 218 && pair.getDaysWorkedTogether() > 1L);
     }
 }
-
