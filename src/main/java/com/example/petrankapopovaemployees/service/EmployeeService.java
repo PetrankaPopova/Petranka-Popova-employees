@@ -43,9 +43,17 @@ public class EmployeeService {
                     Integer projectId = Integer.parseInt(line[1].trim());
                     LocalDate dateFrom = parseDate(line[2].trim());
                     LocalDate dateTo = line[3].trim().equalsIgnoreCase("NULL") ? LocalDate.now() : parseDate(line[3].trim());
+
+                    if (dateTo.isBefore(dateFrom)) {
+                        logger.warn("Invalid date range: {} - {}", dateFrom, dateTo);
+                        continue;
+                    }
+
                     employeeProjects.add(new EmployeeProject(empId, projectId, dateFrom, dateTo));
                 } catch (NumberFormatException e) {
                     logger.warn("Skipping non-numeric value: {}", e.getMessage());
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Skipping invalid date: {}", e.getMessage());
                 }
             }
         }
@@ -66,18 +74,30 @@ public class EmployeeService {
     }
 
     private List<EmployeePair> findEmployeePairs(List<EmployeeProject> employeeProjects) {
+        employeeProjects.sort(Comparator.comparing(EmployeeProject::getDateFrom));
+
         Map<String, Long> pairDurationMap = new HashMap<>();
+        TreeMap<LocalDate, List<EmployeeProject>> activeProjects = new TreeMap<>();
 
-        for (int i = 0; i < employeeProjects.size(); i++) {
-            for (int j = i + 1; j < employeeProjects.size(); j++) {
-                EmployeeProject ep1 = employeeProjects.get(i);
-                EmployeeProject ep2 = employeeProjects.get(j);
+        for (EmployeeProject currentProject : employeeProjects) {
+            LocalDate currentStart = currentProject.getDateFrom();
+            LocalDate currentEnd = currentProject.getDateTo();
 
-                if (ep1.getProjectId()==(ep2.getProjectId())) {
-                    long overlapDays = calculateOverlapDays(ep1, ep2);
-                    if (overlapDays > 0) {
-                        String pairKey = ep1.getEmpId() < ep2.getEmpId() ? ep1.getEmpId() + "," + ep2.getEmpId() : ep2.getEmpId() + "," + ep1.getEmpId();
-                        pairDurationMap.put(pairKey, pairDurationMap.getOrDefault(pairKey, 0L) + overlapDays);
+            activeProjects.headMap(currentStart, false).clear();
+
+            activeProjects.computeIfAbsent(currentEnd, k -> new ArrayList<>()).add(currentProject);
+
+
+            for (List<EmployeeProject> projects : activeProjects.values()) {
+                for (EmployeeProject activeProject : projects) {
+                    if (activeProject.getProjectId() == currentProject.getProjectId() && !activeProject.equals(currentProject)) {
+                        long overlapDays = calculateOverlapDays(activeProject, currentProject);
+                        if (overlapDays > 0) {
+                            String pairKey = activeProject.getEmpId() < currentProject.getEmpId()
+                                    ? activeProject.getEmpId() + "," + currentProject.getEmpId()
+                                    : currentProject.getEmpId() + "," + activeProject.getEmpId();
+                            pairDurationMap.put(pairKey, pairDurationMap.getOrDefault(pairKey, 0L) + overlapDays);
+                        }
                     }
                 }
             }
@@ -100,7 +120,6 @@ public class EmployeeService {
             return 0;
         }
 
-        return ChronoUnit.DAYS.between(start, end) + 1; // Add 1 to include the end day in the count
+        return ChronoUnit.DAYS.between(start, end) + 1; 
     }
 }
-
