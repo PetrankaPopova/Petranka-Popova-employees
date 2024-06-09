@@ -10,14 +10,16 @@
 <div class="container mt-5">
     <h1 class="mb-4">Employee Pair Finder</h1>
     <div class="mb-3">
-        <label for="fileInput" class="form-label">Select CSV file:</label>
-        <input type="file" class="form-control" id="fileInput">
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+            <label for="fileInput" class="form-label">Select CSV file:</label>
+            <input type="file" class="form-control" id="fileInput" name="file">
+            <button type="submit" class="btn btn-primary mt-2">Upload File</button>
+        </form>
     </div>
-    <button class="btn btn-primary" onclick="uploadFile()">Upload File</button>
     <hr>
-    <h2 class="mt-4">Employee Projects:</h2>
+    <h2 class="mt-4">Longest Working Pair:</h2>
     <div class="table-responsive mt-3">
-        <table class="table table-bordered" id="employeeProjectsTable">
+        <table class="table table-bordered" id="longestWorkingPairTable">
             <thead>
             <tr>
                 <th>Employee ID #1</th>
@@ -26,12 +28,17 @@
                 <th>Days Worked</th>
             </tr>
             </thead>
-            <tbody id="employeeProjectsBody"></tbody>
+            <tbody id="longestWorkingPairBody"></tbody>
         </table>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
+    document.getElementById('uploadForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        uploadFile();
+    });
+
     function uploadFile() {
         const fileInput = document.getElementById('fileInput');
         const file = fileInput.files[0];
@@ -46,7 +53,7 @@
                 }
             })
                 .then(response => {
-                    displayExtractedValues(response.data);
+                    displayLongestWorkingPair(response.data.longestWorkingPair, response.data.employeeProjects);
                 })
                 .catch(error => {
                     displayError('An error occurred while uploading the file.');
@@ -57,55 +64,43 @@
         }
     }
 
-    function displayExtractedValues(response) {
-        const employeeProjectsBody = document.getElementById('employeeProjectsBody');
-        employeeProjectsBody.innerHTML = '';
+    function displayLongestWorkingPair(longestWorkingPair, employeeProjects) {
+        const longestWorkingPairBody = document.getElementById('longestWorkingPairBody');
+        longestWorkingPairBody.innerHTML = '';
 
-        if (!response || !response.employeeProjects || response.employeeProjects.length === 0) {
-            displayError('No employee projects found.');
+        if (!longestWorkingPair) {
+            displayError('No longest working pair found.');
             return;
         }
 
-        if (!response.longestWorkingPair || response.longestWorkingPair.length === 0) {
-            displayError('No longest working pairs found.');
+        const projectId = getProjectId(longestWorkingPair.employeeId1, longestWorkingPair.employeeId2, employeeProjects);
+        if (projectId === null) {
+            displayError('Project ID not found for the longest working pair.');
             return;
         }
 
-        const longestWorkingPairs = response.longestWorkingPair;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+        <td>${longestWorkingPair.employeeId1}</td>
+        <td>${longestWorkingPair.employeeId2}</td>
+        <td>${projectId}</td>
+        <td>${longestWorkingPair.daysWorkedTogether}</td>
+    `;
+        longestWorkingPairBody.appendChild(row);
+    }
 
-        response.employeeProjects.forEach(project => {
-            // Find all pairs that have the same projectId as the current project
-            const matchingPairs = longestWorkingPairs.filter(pair =>
-                (pair.employeeId1 === project.empId || pair.employeeId2 === project.empId)
-            );
-
-            if (matchingPairs.length > 0) {
-                matchingPairs.forEach(pair => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                    <td>${pair.employeeId1}</td>
-                    <td>${pair.employeeId2}</td>
-                    <td>${project.projectId}</td>
-                    <td>${pair.daysWorkedTogether}</td>
-                `;
-                    employeeProjectsBody.appendChild(row);
-                });
-            } else {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                <td>${project.empId}</td>
-                <td>N/A</td>
-                <td>${project.projectId}</td>
-                <td>N/A</td>
-            `;
-                employeeProjectsBody.appendChild(row);
+    function getProjectId(employeeId1, employeeId2, employeeProjects) {
+        for (const project of employeeProjects) {
+            if ((project.empId === employeeId1 || project.empId === employeeId2)) {
+                return project.projectId;
             }
-        });
+        }
+        return null;
     }
 
     function displayError(message) {
-        const employeeProjectsBody = document.getElementById('employeeProjectsBody');
-        employeeProjectsBody.innerHTML = `<tr><td colspan="4" class="text-danger">${message}</td></tr>`;
+        const longestWorkingPairBody = document.getElementById('longestWorkingPairBody');
+        longestWorkingPairBody.innerHTML = `<tr><td colspan="4" class="text-danger">${message}</td></tr>`;
     }
 </script>
 </body>

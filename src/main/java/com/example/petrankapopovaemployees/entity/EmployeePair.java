@@ -11,6 +11,9 @@ import lombok.Data;
 @AllArgsConstructor
 public class EmployeePair {
 
+    public EmployeePair(){
+
+    }
     /**
      * The ID of the first employee in the pair.
      */
@@ -25,4 +28,8 @@ public class EmployeePair {
      * The number of days the two employees have worked together on common projects.
      */
     private long daysWorkedTogether;
+    private int projectId;
+
+    public EmployeePair(long l, long l1, long maxDaysWorked) {
+    }
 }

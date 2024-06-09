@@ -8,7 +8,7 @@ import java.util.List;
 @AllArgsConstructor
 public class EmployeeWorkResponse {
     private List<EmployeeProject> employeeProjects;
-    private List<EmployeePair> longestWorkingPair;
+    private EmployeePair longestWorkingPair;
 
     public EmployeeWorkResponse() {
 

@@ -16,12 +16,12 @@ public class EmployeeProject {
     /**
      * The ID of the employee assigned to the project.
      */
-    private long empId;
+    private Integer empId;
 
     /**
      * The ID of the project.
      */
-    private long projectId;
+    private Integer projectId;
 
     /**
      * The start date of the project.

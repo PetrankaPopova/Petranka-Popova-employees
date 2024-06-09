@@ -22,11 +22,11 @@ import java.util.*;
 public class EmployeeService {
     private static final Logger logger = LoggerFactory.getLogger(EmployeeService.class);
 
-    public List<EmployeePair> processFile(MultipartFile file) throws IOException, CsvValidationException {
+    public EmployeePair processFile(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = loadEmployeeProjects(file);
         if (employeeProjects.isEmpty()) {
             logger.error("Failed to load employee projects.");
-            return Collections.emptyList();
+            return null;
         }
         return findEmployeePairs(employeeProjects);
     }
@@ -73,7 +73,7 @@ public class EmployeeService {
         throw new IllegalArgumentException("Unknown date format: " + dateStr);
     }
 
-    private List<EmployeePair> findEmployeePairs(List<EmployeeProject> employeeProjects) {
+    private EmployeePair findEmployeePairs(List<EmployeeProject> employeeProjects) {
         employeeProjects.sort(Comparator.comparing(EmployeeProject::getDateFrom));
 
         Map<String, Long> pairDurationMap = new HashMap<>();
@@ -86,7 +86,6 @@ public class EmployeeService {
             activeProjects.headMap(currentStart, false).clear();
 
             activeProjects.computeIfAbsent(currentEnd, k -> new ArrayList<>()).add(currentProject);
-
 
             for (List<EmployeeProject> projects : activeProjects.values()) {
                 for (EmployeeProject activeProject : projects) {
@@ -103,10 +102,13 @@ public class EmployeeService {
             }
         }
 
-        List<EmployeePair> employeePairs = new ArrayList<>();
+        EmployeePair employeePairs = new EmployeePair();
         for (Map.Entry<String, Long> entry : pairDurationMap.entrySet()) {
             String[] ids = entry.getKey().split(",");
-            employeePairs.add(new EmployeePair(Long.parseLong(ids[0]), Long.parseLong(ids[1]), entry.getValue()));
+            employeePairs.setEmployeeId1(Long.parseLong(ids[0]));
+            employeePairs.setEmployeeId2(Long.parseLong(ids[1]));
+            employeePairs.setDaysWorkedTogether(entry.getValue());
+
         }
 
         return employeePairs;
@@ -120,6 +122,6 @@ public class EmployeeService {
             return 0;
         }
 
-        return ChronoUnit.DAYS.between(start, end) + 1; 
+        return ChronoUnit.DAYS.between(start, end) + 1;
     }
 }

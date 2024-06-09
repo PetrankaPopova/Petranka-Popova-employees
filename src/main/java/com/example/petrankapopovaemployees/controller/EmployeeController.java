@@ -37,7 +37,7 @@ public class EmployeeController {
             EmployeeWorkResponse response = new EmployeeWorkResponse();
             List<EmployeeProject> employeeProjects = employeeService.loadEmployeeProjects(file);
             response.setEmployeeProjects(employeeProjects);
-            List<EmployeePair> longestWorkingPair = employeeService.processFile(file);
+            EmployeePair longestWorkingPair = employeeService.processFile(file);
             response.setLongestWorkingPair(longestWorkingPair);
 
             return ResponseEntity.ok(response);
