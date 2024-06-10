@@ -3,6 +3,8 @@ package com.example.petrankapopovaemployees.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * Entity class representing a pair of employees who have worked together.
  * This class stores the IDs of the two employees and the number of days they have worked together on common projects.
@@ -28,7 +30,7 @@ public class EmployeePair {
      * The number of days the two employees have worked together on common projects.
      */
     private long daysWorkedTogether;
-    private int projectId;
+    private List<Integer> projectIds;
 
 
 }

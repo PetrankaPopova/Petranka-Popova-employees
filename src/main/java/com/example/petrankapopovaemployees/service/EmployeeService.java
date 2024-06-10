@@ -24,14 +24,6 @@ import java.util.*;
 public class EmployeeService {
     private static final Logger logger = LoggerFactory.getLogger(EmployeeService.class);
 
-    /**
-     * Processes the uploaded file to find the longest working pair of employees.
-     *
-     * @param file The uploaded CSV file containing employee project data.
-     * @return The longest working pair of employees, or null if not found.
-     * @throws IOException           If an I/O error occurs while reading the file.
-     * @throws CsvValidationException If an error occurs during CSV validation.
-     */
     public EmployeePair processFile(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = loadEmployeeProjects(file);
         if (employeeProjects.isEmpty()) {
@@ -41,14 +33,6 @@ public class EmployeeService {
         return findEmployeePairs(employeeProjects);
     }
 
-    /**
-     * Loads employee project data from the uploaded CSV file.
-     *
-     * @param file The uploaded CSV file containing employee project data.
-     * @return A list of employee project objects.
-     * @throws IOException           If an I/O error occurs while reading the file.
-     * @throws CsvValidationException If an error occurs during CSV validation.
-     */
     public List<EmployeeProject> loadEmployeeProjects(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
@@ -95,6 +79,7 @@ public class EmployeeService {
         employeeProjects.sort(Comparator.comparing(EmployeeProject::getDateFrom));
 
         Map<String, Long> pairDurationMap = new HashMap<>();
+        Map<String, Set<Integer>> pairProjectMap = new HashMap<>();
         TreeMap<LocalDate, List<EmployeeProject>> activeProjects = new TreeMap<>();
 
         for (EmployeeProject currentProject : employeeProjects) {
@@ -107,29 +92,36 @@ public class EmployeeService {
 
             for (List<EmployeeProject> projects : activeProjects.values()) {
                 for (EmployeeProject activeProject : projects) {
-                    if (activeProject.getProjectId() == currentProject.getProjectId() && !activeProject.equals(currentProject)) {
+                    if (activeProject.getProjectId().equals(currentProject.getProjectId()) && !activeProject.equals(currentProject)) {
                         long overlapDays = calculateOverlapDays(activeProject, currentProject);
                         if (overlapDays > 0) {
                             String pairKey = activeProject.getEmpId() < currentProject.getEmpId()
                                     ? activeProject.getEmpId() + "," + currentProject.getEmpId()
                                     : currentProject.getEmpId() + "," + activeProject.getEmpId();
                             pairDurationMap.put(pairKey, pairDurationMap.getOrDefault(pairKey, 0L) + overlapDays);
+                            pairProjectMap.computeIfAbsent(pairKey, k -> new HashSet<>()).add(currentProject.getProjectId());
                         }
                     }
                 }
             }
         }
 
-        EmployeePair employeePairs = new EmployeePair();
-        for (Map.Entry<String, Long> entry : pairDurationMap.entrySet()) {
-            String[] ids = entry.getKey().split(",");
-            employeePairs.setEmployeeId1(Long.parseLong(ids[0]));
-            employeePairs.setEmployeeId2(Long.parseLong(ids[1]));
-            employeePairs.setDaysWorkedTogether(entry.getValue());
+        EmployeePair longestWorkingPair = null;
+        long maxDuration = 0;
 
+        for (Map.Entry<String, Long> entry : pairDurationMap.entrySet()) {
+            if (entry.getValue() > maxDuration) {
+                maxDuration = entry.getValue();
+                String[] ids = entry.getKey().split(",");
+                longestWorkingPair = new EmployeePair();
+                longestWorkingPair.setEmployeeId1(Long.parseLong(ids[0]));
+                longestWorkingPair.setEmployeeId2(Long.parseLong(ids[1]));
+                longestWorkingPair.setDaysWorkedTogether(entry.getValue());
+                longestWorkingPair.setProjectIds(new ArrayList<>(pairProjectMap.get(entry.getKey())));
+            }
         }
 
-        return employeePairs;
+        return longestWorkingPair;
     }
 
     private static long calculateOverlapDays(EmployeeProject ep1, EmployeeProject ep2) {

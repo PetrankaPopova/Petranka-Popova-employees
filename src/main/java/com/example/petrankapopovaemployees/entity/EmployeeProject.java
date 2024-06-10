@@ -12,6 +12,8 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 public class EmployeeProject {
+    public EmployeeProject() {
+    }
 
     /**
      * The ID of the employee assigned to the project.
