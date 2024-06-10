@@ -40,7 +40,7 @@ public class EmployeeController {
      * @return The name of the view template to be rendered.
      */
     @GetMapping("/upload")
-    public String showUploadForm(Model model) {
+    public String showUploadForm() {
         return "home";
     }
 
