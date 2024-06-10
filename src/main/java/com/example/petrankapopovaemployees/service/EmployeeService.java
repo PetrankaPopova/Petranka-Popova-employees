@@ -24,6 +24,14 @@ import java.util.*;
 public class EmployeeService {
     private static final Logger logger = LoggerFactory.getLogger(EmployeeService.class);
 
+    /**
+     * Processes the uploaded file to find the longest working pair of employees.
+     *
+     * @param file The uploaded CSV file containing employee project data.
+     * @return The longest working pair of employees, or null if not found.
+     * @throws IOException           If an I/O error occurs while reading the file.
+     * @throws CsvValidationException If an error occurs during CSV validation.
+     */
     public EmployeePair processFile(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = loadEmployeeProjects(file);
         if (employeeProjects.isEmpty()) {
@@ -33,6 +41,14 @@ public class EmployeeService {
         return findEmployeePairs(employeeProjects);
     }
 
+    /**
+     * Loads employee project data from the uploaded CSV file.
+     *
+     * @param file The uploaded CSV file containing employee project data.
+     * @return A list of employee project objects.
+     * @throws IOException           If an I/O error occurs while reading the file.
+     * @throws CsvValidationException If an error occurs during CSV validation.
+     */
     public List<EmployeeProject> loadEmployeeProjects(MultipartFile file) throws IOException, CsvValidationException {
         List<EmployeeProject> employeeProjects = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
@@ -62,6 +78,13 @@ public class EmployeeService {
         return employeeProjects;
     }
 
+    /**
+     * Parses a date string into a LocalDate object.
+     *
+     * @param dateStr The date string to parse.
+     * @return The parsed LocalDate object.
+     * @throws IllegalArgumentException If the date format is unknown.
+     */
     private LocalDate parseDate(String dateStr) {
         List<String> dateFormats = Arrays.asList("yyyy-MM-dd", "MM/dd/yyyy", "dd-MM-yyyy");
         for (String format : dateFormats) {
@@ -75,6 +98,12 @@ public class EmployeeService {
         throw new IllegalArgumentException("Unknown date format: " + dateStr);
     }
 
+    /**
+     * Finds the pair of employees who have worked together the longest on the same project(s).
+     *
+     * @param employeeProjects A list of employee project objects.
+     * @return The longest working pair of employees.
+     */
     private EmployeePair findEmployeePairs(List<EmployeeProject> employeeProjects) {
         employeeProjects.sort(Comparator.comparing(EmployeeProject::getDateFrom));
 
@@ -124,6 +153,13 @@ public class EmployeeService {
         return longestWorkingPair;
     }
 
+    /**
+     * Calculates the number of overlapping days between two employee projects.
+     *
+     * @param ep1 The first employee project.
+     * @param ep2 The second employee project.
+     * @return The number of overlapping days.
+     */
     private static long calculateOverlapDays(EmployeeProject ep1, EmployeeProject ep2) {
         LocalDate start = ep1.getDateFrom().isAfter(ep2.getDateFrom()) ? ep1.getDateFrom() : ep2.getDateFrom();
         LocalDate end = ep1.getDateTo().isBefore(ep2.getDateTo()) ? ep1.getDateTo() : ep2.getDateTo();
@@ -135,3 +171,7 @@ public class EmployeeService {
         return ChronoUnit.DAYS.between(start, end) + 1;
     }
 }
+
+
+
+
